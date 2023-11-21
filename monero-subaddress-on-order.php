@@ -60,6 +60,18 @@ function generate_monero_subaddress_on_order($order_id) {
 
 add_action('woocommerce_new_order', 'generate_monero_subaddress_on_order', 10, 1);
 
+// Enqueue script for AJAX request on checkout page
+add_action('wp_enqueue_scripts', 'monero_subaddress_ajax_script');
+
+function monero_subaddress_ajax_script() {
+    wp_enqueue_script('monero-subaddress-ajax', plugin_dir_url(__FILE__) . 'monero-subaddress-ajax.js', array('jquery'), '1.0', true);
+    
+    // Pass the necessary variables to script.js
+    wp_localize_script('monero-subaddress-ajax', 'monero_subaddress_vars', array(
+        'ajaxurl' => admin_url('admin-ajax.php'),
+    ));
+}
+
 // Display the subaddress on the checkout page
 add_action('woocommerce_before_checkout_form', 'display_monero_subaddress_on_checkout');
 
@@ -68,6 +80,6 @@ function display_monero_subaddress_on_checkout() {
     $subaddress = get_post_meta($order_id, '_monero_subaddress', true);
 
     if (!empty($subaddress)) {
-        echo '<p><strong>Monero Subaddress:</strong> ' . esc_html($subaddress) . '</p>';
+        echo '<p id="monero-subaddress-container"><strong>Monero Subaddress:</strong> ' . esc_html($subaddress) . '</p>';
     }
 }
