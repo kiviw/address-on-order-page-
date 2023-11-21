@@ -28,7 +28,10 @@ function generate_monero_subaddress_on_order($order_id) {
         ],
     ]);
 
-    if (!is_wp_error($response)) {
+    if (is_wp_error($response)) {
+        // Log error details for debugging
+        error_log('Monero RPC Error for Order ' . $order_id . ': ' . $response->get_error_message());
+    } else {
         $body = wp_remote_retrieve_body($response);
 
         // Log the response for debugging
@@ -39,6 +42,9 @@ function generate_monero_subaddress_on_order($order_id) {
         if (isset($result['result']['address'])) {
             // Update the order with the generated subaddress
             update_post_meta($order_id, '_monero_subaddress', $result['result']['address']);
+        } else {
+            // Log an error message if the response format is unexpected
+            error_log('Monero RPC Error: Unexpected response format for Order ' . $order_id);
         }
     }
 }
