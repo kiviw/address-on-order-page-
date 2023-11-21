@@ -7,47 +7,53 @@
  */
 
 function generate_monero_subaddress_on_order($order_id) {
-    $rpc_url = 'http://127.0.0.1:18080/json_rpc'; // Replace with your Monero RPC URL
+    // Ensure WooCommerce is active
+    if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_option('active_plugins')))) {
+        // Load WooCommerce functions
+        include_once(WC()->plugin_path() . '/includes/wc-core-functions.php');
 
-    $request_body = json_encode([
-        'jsonrpc' => '2.0',
-        'id' => '0',
-        'method' => 'create_address',
-        'params' => [
-            'count' => 1,
-        ],
-    ]);
+        $rpc_url = 'http://127.0.0.1:18080/json_rpc'; // Replace with your Monero RPC URL
 
-    // Log the request for debugging
-    error_log('Monero RPC Request for Order ' . $order_id . ': ' . $request_body);
+        $request_body = json_encode([
+            'jsonrpc' => '2.0',
+            'id' => '0',
+            'method' => 'create_address',
+            'params' => [
+                'count' => 1,
+            ],
+        ]);
 
-    $response = wp_remote_post($rpc_url, [
-        'body' => $request_body,
-        'headers' => [
-            'Content-Type' => 'application/json',
-        ],
-    ]);
+        // Log the request for debugging
+        error_log('Monero RPC Request for Order ' . $order_id . ': ' . $request_body);
 
-    if (is_wp_error($response)) {
-        // Log error details for debugging
-        error_log('Monero RPC Error for Order ' . $order_id . ': ' . $response->get_error_message());
-    } else {
-        $body = wp_remote_retrieve_body($response);
+        $response = wp_remote_post($rpc_url, [
+            'body' => $request_body,
+            'headers' => [
+                'Content-Type' => 'application/json',
+            ],
+        ]);
 
-        // Log the response for debugging
-        error_log('Monero RPC Response for Order ' . $order_id . ': ' . $body);
-
-        $result = json_decode($body, true);
-
-        if (isset($result['result']['address'])) {
-            // Update the order with the generated subaddress
-            update_post_meta($order_id, '_monero_subaddress', $result['result']['address']);
+        if (is_wp_error($response)) {
+            // Log error details for debugging
+            error_log('Monero RPC Error for Order ' . $order_id . ': ' . $response->get_error_message());
         } else {
-            // Log an error message if the response format is unexpected
-            error_log('Monero RPC Error: Unexpected response format for Order ' . $order_id);
+            $body = wp_remote_retrieve_body($response);
 
-            // Log the unexpected response for further investigation
-            error_log('Monero RPC Unexpected Response: ' . $body);
+            // Log the response for debugging
+            error_log('Monero RPC Response for Order ' . $order_id . ': ' . $body);
+
+            $result = json_decode($body, true);
+
+            if (isset($result['result']['address'])) {
+                // Update the order with the generated subaddress
+                update_post_meta($order_id, '_monero_subaddress', $result['result']['address']);
+            } else {
+                // Log an error message if the response format is unexpected
+                error_log('Monero RPC Error: Unexpected response format for Order ' . $order_id);
+
+                // Log the unexpected response for further investigation
+                error_log('Monero RPC Unexpected Response: ' . $body);
+            }
         }
     }
 }
