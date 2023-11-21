@@ -45,6 +45,9 @@ function generate_monero_subaddress_on_order($order_id) {
         } else {
             // Log an error message if the response format is unexpected
             error_log('Monero RPC Error: Unexpected response format for Order ' . $order_id);
+
+            // Log the unexpected response for further investigation
+            error_log('Monero RPC Unexpected Response: ' . $body);
         }
     }
 }
